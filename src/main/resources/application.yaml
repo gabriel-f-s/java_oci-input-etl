@@ -15,3 +15,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+server:
+  shutdown: graceful
