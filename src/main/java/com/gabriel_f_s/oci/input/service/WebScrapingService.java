@@ -1,30 +1,22 @@
-package com.gabriel_f_s.oci.input.crawler.service;
+package com.gabriel_f_s.oci.input.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.gabriel_f_s.oci.input.crawler.dto.Status;
-import com.gabriel_f_s.oci.input.crawler.exception.ConnectionFailedException;
+import com.gabriel_f_s.oci.input.exception.ConnectionFailedException;
 import lombok.AllArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Component
 @AllArgsConstructor
-public class ConnectionService {
+public class WebScrapingService {
 
     private final RestClient restClient = RestClient.create();
     private final String URI = "https://dados-abertos-rf-cnpj.casadosdados.com.br/arquivos/";
@@ -32,10 +24,13 @@ public class ConnectionService {
     /**
      * Returns a list of files available on the page.
      **/
-    public List<String> getAllFilesNameFromLastFile(String uri) {
+    public List<String> getAllFilesNameFromLastFile() {
+        String lastMonth = getLastMonth();
+        String lastMonthUri = URI + lastMonth + "/";
+
         List<String> files = new ArrayList<>();
         try {
-            Document document = Jsoup.connect(uri).get();
+            Document document = Jsoup.connect(lastMonthUri).get();
             Elements links = document.getElementsByTag("a");
 
             List<String> largeFilesName = new ArrayList<>();
@@ -81,6 +76,13 @@ public class ConnectionService {
             lastMonth = document.substring(lastMonthIndexStart, lastMonthIndexStart + 10);
         }
         return lastMonth;
+    }
+
+    /**
+     * Returns the complete URI of the last month file.
+     **/
+    public String getLastMonthUri() {
+        return URI + getLastMonth();
     }
 
     /**

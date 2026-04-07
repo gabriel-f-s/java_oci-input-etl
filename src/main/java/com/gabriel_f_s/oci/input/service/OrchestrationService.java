@@ -1,25 +1,28 @@
-package com.gabriel_f_s.oci.input.crawler.service;
+package com.gabriel_f_s.oci.input.service;
 
-import com.gabriel_f_s.oci.input.crawler.dto.csv.*;
-import com.gabriel_f_s.oci.input.crawler.entity.*;
-import com.gabriel_f_s.oci.input.crawler.exception.*;
-import com.gabriel_f_s.oci.input.crawler.mapper.*;
-import com.gabriel_f_s.oci.input.crawler.repository.NaturezaRepository;
-import com.gabriel_f_s.oci.input.crawler.repository.QualificacaoRepository;
-import com.opencsv.exceptions.CsvDataTypeMismatchException;
+import com.gabriel_f_s.oci.input.dto.csv.*;
+import com.gabriel_f_s.oci.input.entity.*;
+import com.gabriel_f_s.oci.input.exception.*;
+import com.gabriel_f_s.oci.input.mapper.*;
+import com.gabriel_f_s.oci.input.repository.*;
+import com.gabriel_f_s.oci.input.dto.csv.*;
+import com.gabriel_f_s.oci.input.entity.*;
+import com.gabriel_f_s.oci.input.exception.DatabaseException;
+import com.gabriel_f_s.oci.input.exception.FileException;
+import com.gabriel_f_s.oci.input.exception.ZipDownloadFailedException;
+import com.gabriel_f_s.oci.input.exception.ZipProcessingFailedException;
+import com.gabriel_f_s.oci.input.mapper.*;
+import com.gabriel_f_s.oci.input.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,16 +31,15 @@ import java.util.zip.ZipInputStream;
 
 @Service
 @RequiredArgsConstructor
-public class ProcessService {
+public class OrchestrationService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProcessService.class);
+    private static final Logger logger = LoggerFactory.getLogger(OrchestrationService.class);
 
     private final RestClient restClient = RestClient.create();
 
-    private final ConnectionService connectionService;
-    private final CsvService csvService;
-    private final DataIngestionService dataIngestionService;
-    private final IOService ioService;
+    private final CsvParserService csvParserService;
+    private final PersistenceService persistenceService;
+    private final WebScrapingService webScrapingService;
 
     private final CnaeMapper cnaeMapper;
     private final MotivoMapper motivoMapper;
@@ -50,39 +52,21 @@ public class ProcessService {
     private final SimplesMapper simplesMapper;
     private final SocioMapper socioMapper;
 
+    private final CnaeRepository cnaeRepository;
+    private final MotivoRepository motivoRepository;
+    private final MunicipioRepository municipioRepository;
     private final NaturezaRepository naturezaRepository;
+    private final PaisRepository paisRepository;
     private final QualificacaoRepository qualificacaoRepository;
 
-    /**
-     * Assemble the URI from the last month and start the download.
-     * @param uri
-     *          The connection URI from the main page.
-     **/
-    @Async
-    @Transactional
-    protected void start(String uri) {
-        String lastMonth = connectionService.getLastMonth();
-        String lastMonthUri = uri + lastMonth + "/";
-
-        List<String> files = connectionService.getAllFilesNameFromLastFile(lastMonthUri);
-
-        for (String file : files) {
-            logger.info("Starting the {} file.", file);
-            String downloadFileUri = lastMonthUri + file;
-            downloadFileAndProcess(downloadFileUri);
-            ioService.updateProcessedFiles(file);
-        }
-        logger.info("Data extraction completed successfully at {}.", LocalDateTime.now());
-        ioService.updateLastProcessedDate(lastMonth);
-    }
 
     /**
      * Download and process the file.
-     * @param uri
-     *          The connection URI from the main page.
+     * @param file
+     *          The file name.
      **/
-    @Transactional
-    public void downloadFileAndProcess(String uri) {
+    public void downloadFileAndProcess(String file) {
+        String uri = webScrapingService.getLastMonthUri() + "/" + file;
         restClient.get()
                 .uri(uri)
                 .accept(MediaType.APPLICATION_OCTET_STREAM)
@@ -94,6 +78,8 @@ public class ProcessService {
                         processFileAndSave(input);
                     } catch (IOException e) {
                         throw new ZipDownloadFailedException("Failed to download zip file: " + e);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed: " + e);
                     }
                     return null;
                 });
@@ -104,7 +90,6 @@ public class ProcessService {
      * @param input
      *          The input stream returned by the website.
      **/
-    @Transactional
     protected void processFileAndSave(InputStream input) {
         try (ZipInputStream zip = new ZipInputStream(input)) {
             ZipEntry entry = zip.getNextEntry();
@@ -115,81 +100,88 @@ public class ProcessService {
                 logger.info("Processing the {} file.", fileName);
 
                 if (fileName.contains("CNAE")) {
-                    csvService.extractDataAndSave(zip, CnaeCsvDTO.class, batch -> {
+                    csvParserService.extractDataAndSave(zip, CnaeCsvDTO.class, batch -> {
                         List<Cnae> cnaes = batch.stream()
                                 .map(cnaeMapper::mapTo)
                                 .toList();
-                        dataIngestionService.insertCnaes(cnaes);
+                        persistenceService.insertCnaes(cnaes);
                     });
                 } else if (fileName.contains("MOTI")) {
-                    csvService.extractDataAndSave(zip, MotivoCsvDTO.class, batch -> {
+                    csvParserService.extractDataAndSave(zip, MotivoCsvDTO.class, batch -> {
                         List<Motivo> motivos = batch.stream()
                                 .map(motivoMapper::mapTo)
                                 .toList();
-                        dataIngestionService.insertMotivos(motivos);
+                        persistenceService.insertMotivos(motivos);
                     });
                 } else if (fileName.contains("MUNIC")) {
-                    csvService.extractDataAndSave(zip, MunicipioCsvDTO.class, batch -> {
+                    csvParserService.extractDataAndSave(zip, MunicipioCsvDTO.class, batch -> {
                         List<Municipio> municipios = batch.stream()
                                 .map(municipioMapper::mapTo)
                                 .toList();
-                        dataIngestionService.insertMunicipios(municipios);
+                        persistenceService.insertMunicipios(municipios);
                     });
                 } else if (fileName.contains("NATJU")) {
-                    csvService.extractDataAndSave(zip, NaturezaCsvDTO.class, batch -> {
+                    csvParserService.extractDataAndSave(zip, NaturezaCsvDTO.class, batch -> {
                         List<Natureza> naturezas = batch.stream()
                                 .map(naturezaMapper::mapTo)
                                 .toList();
-                        dataIngestionService.insertNaturezas(naturezas);
+                        persistenceService.insertNaturezas(naturezas);
                     });
                 } else if (fileName.contains("PAIS")) {
-                    csvService.extractDataAndSave(zip, PaisCsvDTO.class, batch -> {
+                    csvParserService.extractDataAndSave(zip, PaisCsvDTO.class, batch -> {
                         List<Pais> paises = batch.stream()
                                 .map(paisMapper::mapTo)
                                 .toList();
-                        dataIngestionService.insertPaises(paises);
+                        persistenceService.insertPaises(paises);
                     });
                 } else if (fileName.contains("QUALS")) {
-                    csvService.extractDataAndSave(zip, QualificacaoCsvDTO.class, batch -> {
+                    csvParserService.extractDataAndSave(zip, QualificacaoCsvDTO.class, batch -> {
                         List<Qualificacao> qualificacoes = batch.stream()
                                 .map(qualificacaoMapper::mapTo)
                                 .toList();
-                        dataIngestionService.insertQualificacoes(qualificacoes);
+                        persistenceService.insertQualificacoes(qualificacoes);
                     });
                 } else if (fileName.contains("EMPRE")) {
-                    Map<String, Long> naturezasMap = naturezaRepository.findAll()
-                            .stream()
-                            .collect(Collectors.toMap(Natureza::getCodigo, Natureza::getId));
-                    Map<String, Long> qualificacoesMap = qualificacaoRepository.findAll()
-                            .stream()
-                            .collect(Collectors.toMap(Qualificacao::getCodigo, Qualificacao::getId));;
+                    Map<String, Long> naturezasMap = generateReferenceMap(naturezaRepository);
+                    Map<String, Long> qualificacoesMap = generateReferenceMap(qualificacaoRepository);
 
-                    csvService.extractDataAndSave(zip, EmpresaCsvDTO.class, batch -> {
+                    csvParserService.extractDataAndSave(zip, EmpresaCsvDTO.class, batch -> {
                         List<Empresa> empresas = batch.stream()
                                 .map(dto -> empresaMapper.mapTo(dto, naturezasMap, qualificacoesMap))
                                 .toList();
-                        dataIngestionService.insertEmpresas(empresas);
+                        persistenceService.insertEmpresas(empresas);
                     });
                 } else if (fileName.contains("ESTABELE")) {
-                    csvService.extractDataAndSave(zip, EstabelecimentoCsvDTO.class, batch -> {
+                    Map<String, Long> motivosMap = generateReferenceMap(motivoRepository);
+                    Map<String, Long> paisesMap = generateReferenceMap(paisRepository);
+                    Map<String, Long> cnaesMap = generateReferenceMap(cnaeRepository);
+                    Map<String, Long> municipiosMap = generateReferenceMap(municipioRepository);
+
+                    csvParserService.extractDataAndSave(zip, EstabelecimentoCsvDTO.class, batch -> {
                         List<Estabelecimento> estabelecimentos = batch.stream()
-                                .map(estabelecimentoMapper::mapTo)
+                                .map(dto -> estabelecimentoMapper.mapTo(
+                                        dto,
+                                        motivosMap,
+                                        paisesMap,
+                                        cnaesMap,
+                                        municipiosMap
+                                ))
                                 .toList();
-                        dataIngestionService.insertEstabelecimentos(estabelecimentos);
+                        persistenceService.insertEstabelecimentos(estabelecimentos);
                     });
                 } else if (fileName.contains("SIMPLES")) {
-                    csvService.extractDataAndSave(zip, SimplesCsvDTO.class, batch -> {
+                    csvParserService.extractDataAndSave(zip, SimplesCsvDTO.class, batch -> {
                         List<Simples> simples = batch.stream()
                                 .map(simplesMapper::mapTo)
                                 .toList();
-                        dataIngestionService.insertSimples(simples);
+                        persistenceService.insertSimples(simples);
                     });
                 } else if (fileName.contains("SOCIO")) {
-                    csvService.extractDataAndSave(zip, SocioCsvDTO.class, batch -> {
+                    csvParserService.extractDataAndSave(zip, SocioCsvDTO.class, batch -> {
                         List<Socio> socios = batch.stream()
                                 .map(socioMapper::mapTo)
                                 .toList();
-                        dataIngestionService.insertSocios(socios);
+                        persistenceService.insertSocios(socios);
                     });
                 }
                 zip.closeEntry();
@@ -201,5 +193,13 @@ public class ProcessService {
         } catch (DataIntegrityViolationException e) {
             throw new DatabaseException("Database error: " + e);
         }
+    }
+
+    private <T extends DomainEntity> Map<String, Long> generateReferenceMap(DomainEntitiesRepository<T> repository) {
+        return repository.findAll()
+                .stream()
+                .collect(Collectors.toMap(
+                        DomainEntity::getCodigo, DomainEntity::getId
+                ));
     }
 }

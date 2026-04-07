@@ -1,10 +1,10 @@
-package com.gabriel_f_s.oci.input.crawler.service;
+package com.gabriel_f_s.oci.input.service;
 
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
+import com.opencsv.enums.CSVReaderNullFieldIndicator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStreamReader;
@@ -15,9 +15,9 @@ import java.util.function.Consumer;
 import java.util.zip.ZipInputStream;
 
 @Service
-public class CsvService {
+public class CsvParserService {
 
-    private static final Logger logger = LoggerFactory.getLogger(CsvService.class);
+    private static final Logger logger = LoggerFactory.getLogger(CsvParserService.class);
 
     private final int BATCH_SIZE = 5000;
 
@@ -30,6 +30,7 @@ public class CsvService {
         CsvToBean<T> csvToBean = new CsvToBeanBuilder<T>(input)
                 .withType(dtoType)
                 .withSeparator(';')
+                .withFieldAsNull(CSVReaderNullFieldIndicator.BOTH)
                 .withIgnoreLeadingWhiteSpace(true)
                 .build();
 

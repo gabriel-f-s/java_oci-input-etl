@@ -1,30 +1,50 @@
-package com.gabriel_f_s.oci.input.crawler.service;
+package com.gabriel_f_s.oci.input.service;
 
-import com.gabriel_f_s.oci.input.crawler.entity.*;
-import com.gabriel_f_s.oci.input.crawler.exception.DatabaseException;
+import com.gabriel_f_s.oci.input.entity.*;
+import com.gabriel_f_s.oci.input.entity.*;
+import com.gabriel_f_s.oci.input.exception.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import java.util.function.BiConsumer;
 
 @Service
-public class DataIngestionService {
+public class PersistenceService {
 
-    private final int BATCH_SIZE = 5000;
+    private static final Logger logger = LoggerFactory.getLogger(PersistenceService.class);
+
+    private final int BATCH_SIZE = 500;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
     private <T> void executeBatch(String sql, List<T> items, BiConsumer<PreparedStatement, T> binder) {
-        jdbcTemplate.batchUpdate(sql, items, BATCH_SIZE, (ps, item) -> {
-            binder.accept(ps, item);
-        });
+        int[][] updateCounts = jdbcTemplate.batchUpdate(sql, items, BATCH_SIZE, binder::accept);
+
+        long totalRowsAffected = 0;
+        for (int[] batch : updateCounts) {
+            for (int count : batch) {
+                if (count > 0 || count == -2) totalRowsAffected++;
+            }
+        }
+
+        logger.info("Batch Processed. Sent: {} | Affected in the Database: {}", items.size(), totalRowsAffected);
+
+        if (totalRowsAffected == 0 && !items.isEmpty()) {
+            logger.warn("WARNING: No rows were inserted. Check if the CNPJs already exist or if the FKs are failing.");
+        }
     }
 
+    @Transactional
     public void insertCnaes(List<Cnae> cnaes) {
         String sql = "INSERT INTO cnaes (codigo, descricao) VALUES (?, ?) ON CONFLICT (codigo) DO NOTHING";
         executeBatch(sql, cnaes, (ps, cnae) -> {
@@ -37,6 +57,7 @@ public class DataIngestionService {
         });
     }
 
+    @Transactional
     public void insertMotivos(List<Motivo> motivos) {
         String sql = "INSERT INTO motivos (codigo, descricao) VALUES (?, ?) ON CONFLICT (codigo) DO NOTHING";
         executeBatch(sql, motivos, (ps, motivo) -> {
@@ -49,6 +70,7 @@ public class DataIngestionService {
         });
     }
 
+    @Transactional
     public void insertMunicipios(List<Municipio> municipios) {
         String sql = "INSERT INTO municipios (codigo, descricao) VALUES (?, ?) ON CONFLICT (codigo) DO NOTHING";
         executeBatch(sql, municipios, (ps, municipio) -> {
@@ -62,6 +84,7 @@ public class DataIngestionService {
         });
     }
 
+    @Transactional
     public void insertNaturezas(List<Natureza> naturezas) {
         String sql = "INSERT INTO naturezas (codigo, descricao) VALUES (?, ?) ON CONFLICT (codigo) DO NOTHING";
         executeBatch(sql, naturezas, (ps, natureza) -> {
@@ -74,6 +97,7 @@ public class DataIngestionService {
         });
     }
 
+    @Transactional
     public void insertPaises(List<Pais> paises) {
         String sql = "INSERT INTO paises (codigo, descricao) VALUES (?, ?) ON CONFLICT (codigo) DO NOTHING";
         executeBatch(sql, paises, (ps, pais) -> {
@@ -86,6 +110,7 @@ public class DataIngestionService {
         });
     }
 
+    @Transactional
     public void insertQualificacoes(List<Qualificacao> qualificacoes) {
         String sql = "INSERT INTO qualificacoes (codigo, descricao) VALUES (?, ?) ON CONFLICT (codigo) DO NOTHING";
         executeBatch(sql, qualificacoes, (ps, qualificacao) -> {
@@ -98,6 +123,7 @@ public class DataIngestionService {
         });
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void insertEmpresas(List<Empresa> empresas) {
         String sql = "INSERT INTO empresas " +
                 "(cnpj_basico, razao_social, natureza_juridica_id, qualificacao_responsavel_id, capital_social, porte_empresa, ente_federativo_responsavel) " +
@@ -121,13 +147,15 @@ public class DataIngestionService {
                     ps.setString(6, empresa.getPorteEmpresa().name());
                 } else {
                     ps.setNull(6, java.sql.Types.VARCHAR);
-                }                ps.setString(7, empresa.getEnteFederativoResponsavel());
+                }
+                ps.setString(7, empresa.getEnteFederativoResponsavel());
             } catch (SQLException e) {
                 throw new DatabaseException("Error mapping 'Empresas': " + e);
             }
         });
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void insertEstabelecimentos(List<Estabelecimento> estabelecimentos) {
         String sql = "INSERT INTO public.estabelecimentos" +
                 "(cnpj_basico, cnpj_ordem, cnpj_dv, identificador_matriz_filial, nome_fantasia, situacao_cadastral, data_situacao_cadastral, motivo_situacao_cadastral_id, nome_cidade_exterior, pais_id, data_inicio_atividade, cnae_fiscal_principal_id, tipo_logradouro, logradouro, numero, complemento, bairro, cep, uf, municipio_id, ddd1, telefone1, ddd2, telefone2, ddd_fax, fax, correio_eletronico, situacao_especial, data_situacao_especial) " +
@@ -137,15 +165,35 @@ public class DataIngestionService {
                 ps.setString(1, estabelecimento.getCnpjBasico());
                 ps.setString(2, estabelecimento.getCnpjOrdem());
                 ps.setString(3, estabelecimento.getCnpjDv());
-                ps.setInt(4, estabelecimento.getIdentificadorMatrizFilial().getValue());
+                if (estabelecimento.getIdentificadorMatrizFilial() != null) {
+                    ps.setString(4, estabelecimento.getIdentificadorMatrizFilial().name());
+                } else {
+                    ps.setNull(4, Types.VARCHAR);
+                }
                 ps.setString(5, estabelecimento.getNomeFantasia());
-                ps.setObject(6, estabelecimento.getSituacaoCadastral());
-                ps.setObject(7, estabelecimento.getDataSituacaoEspecial());
-                ps.setObject(8, estabelecimento.getMotivoSituacaoCadastral().getId() != null ? estabelecimento.getMotivoSituacaoCadastral().getId() : null);
+                if (estabelecimento.getSituacaoCadastral() != null) {
+                    ps.setObject(6, estabelecimento.getSituacaoCadastral().getValue());
+                } else {
+                    ps.setNull(6, java.sql.Types.VARCHAR);
+                }
+                ps.setObject(7, estabelecimento.getDataSituacaoCadastral());
+                if (estabelecimento.getMotivoSituacaoCadastral() != null && estabelecimento.getMotivoSituacaoCadastral().getId() != null) {
+                    ps.setLong(8, estabelecimento.getMotivoSituacaoCadastral().getId());
+                } else {
+                    ps.setNull(8, java.sql.Types.BIGINT);
+                }
                 ps.setString(9, estabelecimento.getNomeCidadeExterior());
-                ps.setObject(10, estabelecimento.getPais().getId() != null ? estabelecimento.getPais().getId() : null);
+                if (estabelecimento.getPais() != null && estabelecimento.getPais().getId() != null) {
+                    ps.setLong(10, estabelecimento.getPais().getId());
+                } else {
+                    ps.setNull(10, java.sql.Types.BIGINT);
+                }
                 ps.setObject(11, estabelecimento.getDataInicioAtividade());
-                ps.setObject(12, estabelecimento.getCnaeFiscalPrincipal().getId() != null ? estabelecimento.getCnaeFiscalPrincipal().getId() : null);
+                if (estabelecimento.getCnaeFiscalPrincipal() != null && estabelecimento.getCnaeFiscalPrincipal().getId() != null) {
+                    ps.setLong(12, estabelecimento.getCnaeFiscalPrincipal().getId());
+                } else {
+                    ps.setNull(12, java.sql.Types.BIGINT);
+                }
                 ps.setString(13, estabelecimento.getTipoLogradouro());
                 ps.setString(14, estabelecimento.getLogradouro());
                 ps.setString(15, estabelecimento.getNumero());
@@ -153,7 +201,11 @@ public class DataIngestionService {
                 ps.setString(17, estabelecimento.getBairro());
                 ps.setString(18, estabelecimento.getCep());
                 ps.setString(19, estabelecimento.getUf());
-                ps.setObject(20, estabelecimento.getMunicipio().getId() != null ? estabelecimento.getMunicipio().getId() : null);
+                if (estabelecimento.getMunicipio() != null && estabelecimento.getMunicipio().getId() != null) {
+                    ps.setLong(20, estabelecimento.getMunicipio().getId());
+                } else {
+                    ps.setNull(20, java.sql.Types.BIGINT);
+                }
                 ps.setString(21, estabelecimento.getDdd1());
                 ps.setString(22, estabelecimento.getTelefone1());
                 ps.setString(23, estabelecimento.getDdd2());
@@ -169,6 +221,7 @@ public class DataIngestionService {
         });
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void insertSimples(List<Simples> simples) {
         String sql = "INSERT INTO simples " +
                 "(cnpj_basico, opcao_pelo_simples, data_opcao_simples, data_exclusao_simples, opcao_pelo_mei, data_opcao_mei, data_exclusao_mei) " +
@@ -188,10 +241,11 @@ public class DataIngestionService {
         });
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void insertSocios(List<Socio> socios) {
         String sql = "INSERT INTO public.socios " +
                 "(cnpj_basico, identificador_de_socio, nome_socio, cnpj_cpf_do_socio, qualificacao_socio_id, data_entrada_sociedade, pais_id, representante_legal, nome_do_representante, qualificacao_representante_legal_id, faixa_etaria)\n" +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (cnpj_basico) DO NOTHING";
         executeBatch(sql, socios, (ps, socio) -> {
             try {
                 ps.setString(1, socio.getCnpjBasico());
