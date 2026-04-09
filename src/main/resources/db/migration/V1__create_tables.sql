@@ -47,7 +47,7 @@ CREATE TABLE empresas (
                           natureza_juridica_id        BIGINT,
                           qualificacao_responsavel_id BIGINT,
                           capital_social              DECIMAL(15,2),
-                          porte_empresa               VARCHAR(100),
+                          porte_empresa               SMALLINT,
                           ente_federativo_responsavel VARCHAR(100),
                           CONSTRAINT uk_empresas_cnpj_basico UNIQUE (cnpj_basico)
 );
@@ -57,9 +57,9 @@ CREATE TABLE estabelecimentos (
                                   cnpj_basico                  VARCHAR(8) NOT NULL,
                                   cnpj_ordem                   VARCHAR(4),
                                   cnpj_dv                      VARCHAR(2),
-                                  identificador_matriz_filial  VARCHAR(20),
+                                  identificador_matriz_filial  SMALLINT,
                                   nome_fantasia                VARCHAR(255),
-                                  situacao_cadastral           VARCHAR(50),
+                                  situacao_cadastral           SMALLINT,
                                   data_situacao_cadastral      DATE,
                                   motivo_situacao_cadastral_id BIGINT,
                                   nome_cidade_exterior         VARCHAR(100),
@@ -68,7 +68,7 @@ CREATE TABLE estabelecimentos (
                                   cnae_fiscal_principal_id     BIGINT,
                                   tipo_logradouro              VARCHAR(50),
                                   logradouro                   VARCHAR(255),
-                                  numero                       VARCHAR(20),
+                                  numero                       VARCHAR(50),
                                   complemento                  VARCHAR(255),
                                   bairro                       VARCHAR(60),
                                   cep                          VARCHAR(8),
@@ -110,7 +110,8 @@ CREATE TABLE socios (
                         representante_legal                 VARCHAR(14),
                         nome_do_representante               VARCHAR(255),
                         qualificacao_representante_legal_id BIGINT,
-                        faixa_etaria                        VARCHAR(5)
+                        faixa_etaria                        SMALLINT,
+                        CONSTRAINT uk_socios_cnpj_basico UNIQUE (cnpj_basico)
 );
 
 CREATE TABLE estabelecimento_cnae (
@@ -131,5 +132,5 @@ ALTER TABLE socios ADD CONSTRAINT FK_SOCIOS_ON_PAIS FOREIGN KEY (pais_id) REFERE
 ALTER TABLE socios ADD CONSTRAINT FK_SOCIOS_ON_QUALIFICACAO_REPRESENTANTE_LEGAL FOREIGN KEY (qualificacao_representante_legal_id) REFERENCES qualificacoes (id);
 ALTER TABLE socios ADD CONSTRAINT FK_SOCIOS_ON_QUALIFICACAO_SOCIO FOREIGN KEY (qualificacao_socio_id) REFERENCES qualificacoes (id);
 
-ALTER TABLE estabelecimento_cnae ADD CONSTRAINT fk_estcna_on_cnae FOREIGN KEY (cnae_id) REFERENCES cnaes (id);
-ALTER TABLE estabelecimento_cnae ADD CONSTRAINT fk_estcna_on_estabelecimentos FOREIGN KEY (estabelecimento_id) REFERENCES estabelecimentos (id);
+ALTER TABLE estabelecimento_cnae ADD CONSTRAINT fk_estcna_on_cnae FOREIGN KEY (cnae_id) REFERENCES cnaes (id) ON DELETE CASCADE;
+ALTER TABLE estabelecimento_cnae ADD CONSTRAINT fk_estcna_on_estabelecimentos FOREIGN KEY (estabelecimento_id) REFERENCES estabelecimentos (id) ON DELETE CASCADE;
