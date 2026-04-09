@@ -1,5 +1,6 @@
 package com.gabriel_f_s.oci.input.config;
 
+import com.gabriel_f_s.oci.input.service.LoggingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
@@ -16,10 +17,17 @@ import java.util.concurrent.Executor;
 public class AsyncConfig implements AsyncConfigurer {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncConfig.class);
+    private final LoggingService loggingService;
+
+    public AsyncConfig(LoggingService loggingService) {
+        this.loggingService = loggingService;
+    }
 
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
         return (exception, method, params) -> {
-            logger.error("Async error in {}: {}" , method.getName(), exception.getMessage());
+            String error = String.format("An error occurred in %s. Message: %s; Cause: %s;", method.getName(), exception.getMessage(), exception.getCause());
+            loggingService.updateLogInCaseOfError(error);
+            logger.error("{}... Stopping application.", error);
         };
     }
 
