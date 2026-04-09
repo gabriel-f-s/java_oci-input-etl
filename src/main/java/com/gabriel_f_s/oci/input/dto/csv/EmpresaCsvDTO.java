@@ -1,9 +1,6 @@
 package com.gabriel_f_s.oci.input.dto.csv;
 
-import com.gabriel_f_s.oci.input.dto.csv.converter.PorteEmpresaConverter;
-import com.gabriel_f_s.oci.input.entity.enums.PorteEmpresa;
 import com.opencsv.bean.CsvBindByPosition;
-import com.opencsv.bean.CsvCustomBindByPosition;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -24,8 +21,8 @@ public class EmpresaCsvDTO {
     private String qualificacaoResponsavel;
     @CsvBindByPosition(position = 4, locale = "pt-BR")
     private BigDecimal capitalSocial;
-    @CsvCustomBindByPosition(converter = PorteEmpresaConverter.class, position = 5)
-    private PorteEmpresa porteEmpresa;
+    @CsvBindByPosition(position = 5)
+    private String porteEmpresa;
     @CsvBindByPosition(position = 6)
     private String enteFederativoResponsavel;
 }

@@ -2,20 +2,15 @@ package com.gabriel_f_s.oci.input.mapper;
 
 import com.gabriel_f_s.oci.input.dto.csv.EstabelecimentoCsvDTO;
 import com.gabriel_f_s.oci.input.entity.*;
-import com.gabriel_f_s.oci.input.entity.*;
+import com.gabriel_f_s.oci.input.mapper.utils.ParsingUtils;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @Component
 public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, EstabelecimentoCsvDTO> {
-
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     @Override
     public Estabelecimento mapTo(EstabelecimentoCsvDTO dto) { return null; }
@@ -31,10 +26,10 @@ public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, Estabel
         e.setCnpjBasico(dto.getCnpjBasico());
         e.setCnpjOrdem(dto.getCnpjOrdem());
         e.setCnpjDv(dto.getCnpjDv());
-        e.setIdentificadorMatrizFilial(dto.getIdentificadorMatrizFilial());
+        e.setIdentificadorMatrizFilial(ParsingUtils.parseInteger(dto.getIdentificadorMatrizFilial()));
         e.setNomeFantasia(dto.getNomeFantasia());
-        e.setSituacaoCadastral(dto.getSituacaoCadastral());
-        e.setDataSituacaoCadastral(parseLocalDate(dto.getDataSituacaoCadastral()));
+        e.setSituacaoCadastral(ParsingUtils.parseInteger(dto.getSituacaoCadastral()));
+        e.setDataSituacaoCadastral(ParsingUtils.parseLocalDate(dto.getDataSituacaoCadastral()));
         Long motivoId = motivosMap.get(dto.getMotivoSituacaoCadastral());
         if (motivoId != null) {
             Motivo motivo = new Motivo();
@@ -48,7 +43,7 @@ public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, Estabel
             pais.setId(paisId);
             e.setPais(pais);
         }
-        e.setDataInicioAtividade(parseLocalDate(dto.getDataInicioAtividade()));
+        e.setDataInicioAtividade(ParsingUtils.parseLocalDate(dto.getDataInicioAtividade()));
         Long cnaeId = cnaesMap.get(dto.getCnaeFiscalPrincipal());
         if (cnaeId != null) {
             Cnae cnaePrincipal = new Cnae();
@@ -57,8 +52,7 @@ public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, Estabel
         }
         if (dto.getCnaeFiscalSecundaria() != null) {
             List<Cnae> cnaesSecudarios = new ArrayList<>();
-            String[] cnaes = dto.getCnaeFiscalSecundaria().split(",");
-
+            String[] cnaes = dto.getCnaeFiscalSecundaria().trim().split(",");
             for (String codigo : cnaes) {
                 Long id = cnaesMap.get(codigo);
                 if (id != null) {
@@ -90,7 +84,7 @@ public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, Estabel
         e.setFax(dto.getFax());
         e.setCorreioEletronico(dto.getCorreioEletronico());
         e.setSituacaoEspecial(dto.getSituacaoEspecial());
-        e.setDataSituacaoEspecial(parseLocalDate(dto.getDataSituacaoEspecial()));
+        e.setDataSituacaoEspecial(ParsingUtils.parseLocalDate(dto.getDataSituacaoEspecial()));
         return e;
     }
 
@@ -100,9 +94,9 @@ public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, Estabel
                 .cnpjBasico(e.getCnpjBasico())
                 .cnpjOrdem(e.getCnpjOrdem())
                 .cnpjDv(e.getCnpjDv())
-                .identificadorMatrizFilial(e.getIdentificadorMatrizFilial())
+                .identificadorMatrizFilial(e.getIdentificadorMatrizFilial().toString())
                 .nomeFantasia(e.getNomeFantasia())
-                .situacaoCadastral(e.getSituacaoCadastral())
+                .situacaoCadastral(e.getSituacaoCadastral().toString())
                 .dataSituacaoCadastral(e.getDataSituacaoCadastral().toString())
                 .motivoSituacaoCadastral(e.getMotivoSituacaoCadastral().getCodigo())
                 .nomeCidadeExterior(e.getNomeCidadeExterior())
@@ -129,14 +123,5 @@ public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, Estabel
                 .build();
     }
 
-    private LocalDate parseLocalDate(String dateStr) {
-        if (dateStr == null || dateStr.isBlank() || "00000000".equals(dateStr) || "0".equals(dateStr)) {
-            return null;
-        }
-        try {
-            return LocalDate.parse(dateStr.trim(), DATE_FORMATTER);
-        } catch (DateTimeParseException e) {
-            return null;
-    }
-    }
+
 }

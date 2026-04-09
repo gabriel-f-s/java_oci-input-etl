@@ -1,9 +1,6 @@
 package com.gabriel_f_s.oci.input.dto.csv;
 
-import com.gabriel_f_s.oci.input.entity.Pais;
-import com.gabriel_f_s.oci.input.entity.Qualificacao;
 import com.opencsv.bean.CsvBindByPosition;
-import com.opencsv.bean.CsvRecurse;
 import lombok.*;
 
 @Getter
@@ -20,21 +17,18 @@ public class SocioCsvDTO {
     private String nomeSocio;
     @CsvBindByPosition(position = 3)
     private String cnpjCpfDoSocio;
-    @CsvRecurse
     @CsvBindByPosition(position = 4)
-    private Qualificacao qualificacaoSocio;
+    private String qualificacaoSocio;
     @CsvBindByPosition(position = 5)
     private String dataEntradaSociedade;
-    @CsvRecurse
     @CsvBindByPosition(position = 6)
-    private Pais pais;
+    private String pais;
     @CsvBindByPosition(position = 7)
     private String representanteLegal;
     @CsvBindByPosition(position = 8)
     private String nomeDoRepresentante;
-    @CsvRecurse
     @CsvBindByPosition(position = 9)
-    private Qualificacao qualificacaoRepresentanteLegal;
+    private String qualificacaoRepresentanteLegal;
     @CsvBindByPosition(position = 10)
     private String faixaEtaria;
 }

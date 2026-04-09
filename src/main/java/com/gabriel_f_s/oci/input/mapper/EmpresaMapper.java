@@ -4,6 +4,7 @@ import com.gabriel_f_s.oci.input.dto.csv.EmpresaCsvDTO;
 import com.gabriel_f_s.oci.input.entity.Empresa;
 import com.gabriel_f_s.oci.input.entity.Natureza;
 import com.gabriel_f_s.oci.input.entity.Qualificacao;
+import com.gabriel_f_s.oci.input.mapper.utils.ParsingUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -32,7 +33,7 @@ public class EmpresaMapper implements CSVMapper<Empresa, EmpresaCsvDTO> {
             empresa.setQualificacaoResponsavel(q);
         }
         empresa.setCapitalSocial(dto.getCapitalSocial());
-        empresa.setPorteEmpresa(dto.getPorteEmpresa());
+        empresa.setPorteEmpresa(ParsingUtils.parseInteger(dto.getPorteEmpresa()));
         empresa.setEnteFederativoResponsavel(dto.getEnteFederativoResponsavel());
         return empresa;
     }
@@ -45,7 +46,7 @@ public class EmpresaMapper implements CSVMapper<Empresa, EmpresaCsvDTO> {
                 .naturezaJuridica(empresa.getNaturezaJuridica().getCodigo())
                 .qualificacaoResponsavel(empresa.getQualificacaoResponsavel().getCodigo())
                 .capitalSocial(empresa.getCapitalSocial())
-                .porteEmpresa(empresa.getPorteEmpresa())
+                .porteEmpresa(empresa.getPorteEmpresa().toString())
                 .enteFederativoResponsavel(empresa.getEnteFederativoResponsavel())
                 .build();
     }

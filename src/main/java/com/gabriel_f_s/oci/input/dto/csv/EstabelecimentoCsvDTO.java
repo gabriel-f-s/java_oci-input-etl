@@ -1,9 +1,5 @@
 package com.gabriel_f_s.oci.input.dto.csv;
 
-import com.gabriel_f_s.oci.input.dto.csv.converter.IdentificadorMatrizFilialConverter;
-import com.gabriel_f_s.oci.input.dto.csv.converter.SituacaoCadastralConverter;
-import com.gabriel_f_s.oci.input.entity.enums.IdentificadorMatrizFilial;
-import com.gabriel_f_s.oci.input.entity.enums.SituacaoCadastral;
 import com.opencsv.bean.*;
 import lombok.*;
 
@@ -19,12 +15,12 @@ public class EstabelecimentoCsvDTO {
     private String cnpjOrdem;
     @CsvBindByPosition(position = 2)
     private String cnpjDv;
-    @CsvCustomBindByPosition(position = 3, converter = IdentificadorMatrizFilialConverter.class)
-    private IdentificadorMatrizFilial identificadorMatrizFilial;
+    @CsvBindByPosition(position = 3)
+    private String identificadorMatrizFilial;
     @CsvBindByPosition(position = 4)
     private String nomeFantasia;
-    @CsvCustomBindByPosition(position = 5, converter = SituacaoCadastralConverter.class)
-    private SituacaoCadastral situacaoCadastral;
+    @CsvBindByPosition(position = 5)
+    private String situacaoCadastral;
     @CsvBindByPosition(position = 6)
     private String dataSituacaoCadastral;
     @CsvBindByPosition(position = 7)
