@@ -1,7 +1,5 @@
 package com.gabriel_f_s.oci.input.entity;
 
-import com.gabriel_f_s.oci.input.entity.enums.IdentificadorMatrizFilial;
-import com.gabriel_f_s.oci.input.entity.enums.SituacaoCadastral;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,12 +25,11 @@ public class Estabelecimento {
     @Column(name = "cnpj_dv")
     private String cnpjDv;
     @Column(name = "identificador_matriz_filial")
-    private IdentificadorMatrizFilial identificadorMatrizFilial;
+    private Integer identificadorMatrizFilial;
     @Column(name = "nome_fantasia")
     private String nomeFantasia;
     @Column(name = "situacao_cadastral")
-    @Enumerated(value = EnumType.STRING)
-    private SituacaoCadastral situacaoCadastral;
+    private Integer situacaoCadastral;
     @Column(name = "data_situacao_cadastral")
     private LocalDate dataSituacaoCadastral;
     @ManyToOne

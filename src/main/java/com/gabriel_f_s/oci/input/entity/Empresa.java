@@ -1,6 +1,5 @@
 package com.gabriel_f_s.oci.input.entity;
 
-import com.gabriel_f_s.oci.input.entity.enums.PorteEmpresa;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,8 +30,7 @@ public class Empresa {
     @Column(name = "capital_social")
     private BigDecimal capitalSocial;
     @Column(name = "porte_empresa")
-    @Enumerated(value = EnumType.STRING)
-    private PorteEmpresa porteEmpresa;
+    private Integer porteEmpresa;
     @Column(name = "ente_federativo_responsavel")
     private String enteFederativoResponsavel;
 }

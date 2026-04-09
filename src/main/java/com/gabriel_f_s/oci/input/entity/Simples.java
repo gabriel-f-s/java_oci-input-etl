@@ -1,11 +1,10 @@
 package com.gabriel_f_s.oci.input.entity;
 
-import com.gabriel_f_s.oci.input.entity.enums.IndicadorOpcao;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -21,17 +20,15 @@ public class Simples {
     @Column(name = "cnpj_basico")
     private String cnpjBasico;
     @Column(name = "opcao_pelo_simples")
-    @Enumerated(value = EnumType.STRING)
-    private IndicadorOpcao opcaoPeloSimples;
+    private String opcaoPeloSimples;
     @Column(name = "data_opcao_simples")
-    private LocalDateTime dataOpcaoSimples;
+    private LocalDate dataOpcaoSimples;
     @Column(name = "data_exclusao_simples")
-    private LocalDateTime dataExclusaoSimples;
+    private LocalDate dataExclusaoSimples;
     @Column(name = "opcao_pelo_mei")
-    @Enumerated(value = EnumType.STRING)
-    private IndicadorOpcao opcaoPeloMei;
+    private String opcaoPeloMei;
     @Column(name = "data_opcao_mei")
-    private LocalDateTime dataOpcaoMei;
+    private LocalDate dataOpcaoMei;
     @Column(name = "data_exclusao_mei")
-    private LocalDateTime dataExclusaoMei;
+    private LocalDate dataExclusaoMei;
 }

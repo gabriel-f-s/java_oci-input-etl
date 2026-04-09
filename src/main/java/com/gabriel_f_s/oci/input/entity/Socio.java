@@ -1,11 +1,10 @@
 package com.gabriel_f_s.oci.input.entity;
 
-import com.gabriel_f_s.oci.input.entity.enums.IdentificadorSocio;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -21,7 +20,7 @@ public class Socio {
     @Column(name = "cnpj_basico")
     private String cnpjBasico;
     @Column(name = "identificador_de_socio")
-    private IdentificadorSocio identificadorDeSocio;
+    private Integer identificadorDeSocio;
     @Column(name = "nome_socio")
     private String nomeSocio;
     @Column(name = "cnpj_cpf_do_socio")
@@ -30,7 +29,7 @@ public class Socio {
     @JoinColumn(name = "qualificacao_socio_id")
     private Qualificacao qualificacaoSocio;
     @Column(name = "data_entrada_sociedade")
-    private LocalDateTime dataEntradaSociedade;
+    private LocalDate dataEntradaSociedade;
     @ManyToOne
     @JoinColumn(name = "pais_id")
     private Pais pais;
@@ -42,5 +41,5 @@ public class Socio {
     @JoinColumn(name = "qualificacao_representante_legal_id")
     private Qualificacao qualificacaoRepresentanteLegal;
     @Column(name = "faixa_etaria")
-    private String faixaEtaria;
+    private Integer faixaEtaria;
 }
