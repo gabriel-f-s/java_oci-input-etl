@@ -4,4 +4,5 @@ public enum ProgressStatus {
     IN_PROGRESS,
     FINISHED,
     CANCELED,
+    ERROR
 }
