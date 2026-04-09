@@ -28,16 +28,24 @@ public class ShutdownDatabaseHandler implements SmartLifecycle {
     public void stop() {
         logger.info("Performing status cleanup before full shutdown...");
         try {
-            String sql = "UPDATE audit_logs SET status = ?, end_date = ?, error = ? WHERE status = ?";
+            int numberOfTimesItStopped = jdbcTemplate.queryForObject(
+                    "SELECT number_of_times_it_stopped FROM public.audit_logs WHERE status = 'IN_PROGRESS';",
+                    int.class
+            );
+            numberOfTimesItStopped += 1;
+
+            String sql = "UPDATE audit_logs SET status = ?, end_date = ?, last_heartbeat = ?, number_of_times_it_stopped = ?, error = ? WHERE status = ?";
             int rows = jdbcTemplate.update(sql,
                     ProgressStatus.CANCELED.name(),
                     LocalDateTime.now(),
+                    LocalDateTime.now(),
+                    numberOfTimesItStopped,
                     "Application closed unexpectedly.",
                     ProgressStatus.IN_PROGRESS.name()
                     );
-            logger.info("Status updated successfully! Rows affected: {}", rows);
+            if (rows != 0) logger.info("Status updated successfully! Rows affected: {}", rows);
         } catch (Exception e) {
-            logger.error("Error updating status: " + e.getMessage());
+            logger.error("Error updating status: {}", e.getMessage());
         }
         this.isRunning = false;
     }
