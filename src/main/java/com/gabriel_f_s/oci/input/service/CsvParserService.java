@@ -1,10 +1,9 @@
 package com.gabriel_f_s.oci.input.service;
 
+import com.gabriel_f_s.oci.input.entity.AuditLog;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.enums.CSVReaderNullFieldIndicator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStreamReader;
@@ -17,21 +16,30 @@ import java.util.zip.ZipInputStream;
 @Service
 public class CsvParserService {
 
-    private static final Logger logger = LoggerFactory.getLogger(CsvParserService.class);
-
     private final int BATCH_SIZE = 5000;
+    private final LoggingService loggingService;
+
+    public CsvParserService(LoggingService loggingService) {
+        this.loggingService = loggingService;
+    }
 
     public <T> void extractDataAndSave(
             ZipInputStream zip,
             Class<T> dtoType,
+            AuditLog log,
             Consumer<List<T>> databaseSaveAction
     ) {
         InputStreamReader input = new InputStreamReader(zip, StandardCharsets.ISO_8859_1);
+
+        long checkpoint = log.getRecordInserted();
+
         CsvToBean<T> csvToBean = new CsvToBeanBuilder<T>(input)
                 .withType(dtoType)
                 .withSeparator(';')
                 .withFieldAsNull(CSVReaderNullFieldIndicator.BOTH)
                 .withIgnoreLeadingWhiteSpace(true)
+                .withIgnoreEmptyLine(true)
+                .withSkipLines(Math.toIntExact(checkpoint))
                 .build();
 
         List<T> batch = new ArrayList<>();
@@ -41,12 +49,14 @@ public class CsvParserService {
 
             if (batch.size() >= BATCH_SIZE) {
                 databaseSaveAction.accept(batch);
+                loggingService.updateRecordsInserted(log.getId(), batch.size());
                 batch.clear();
             }
         }
 
         if (!batch.isEmpty()) {
             databaseSaveAction.accept(batch);
+            loggingService.updateRecordsInserted(log.getId(), batch.size());
             batch.clear();
         }
     }
