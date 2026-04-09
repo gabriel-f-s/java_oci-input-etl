@@ -54,10 +54,10 @@ public class WorkflowManagerService {
         List<String> webFiles = webScrapingService.getAllFilesNameFromLastFile();
         List<String> files = loggingService.checkProcessedFiles(log, webFiles);
 
-        String tempFileForTesting = "Estabelecimentos0.zip";
         for (String file : files) {
+            loggingService.updateCurrentFile(log, file);
             logger.info("Starting the {} file.", file);
-            orchestrationService.downloadFileAndProcess(file);
+            orchestrationService.downloadFileAndProcess(file, log);
             loggingService.updateProcessedFiles(log, file);
         }
         logger.info("Data extraction completed successfully at {}.", LocalDateTime.now());
