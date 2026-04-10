@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping
 public class CrawlerController {
 
-    private ValidationService service;
+    private final ValidationService service;
 
     CrawlerController(ValidationService service) {
         this.service = service;
