@@ -65,4 +65,8 @@ public class AuditLog {
     public void addFileProcessed(String file) {
         this.filesProcessed.add(file);
     }
+
+    public void addNumberOfTimesItStopped() {
+        this.numberOfTimesItStopped += 1;
+    }
 }
