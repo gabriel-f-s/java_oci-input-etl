@@ -23,4 +23,11 @@ public class ParsingUtils {
         if (intStr == null) return null;
         return Integer.parseInt(intStr);
     }
+
+    public static String stringTreatment(String str) {
+        if (str == null) return null;
+        int limit = 255;
+        String treatedString = str.trim();
+        return treatedString.length() <= limit ? treatedString : treatedString.substring(0, limit);
+    }
 }
