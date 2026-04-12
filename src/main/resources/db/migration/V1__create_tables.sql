@@ -46,7 +46,7 @@ CREATE TABLE empresas (
                           razao_social                VARCHAR(255),
                           natureza_juridica_id        BIGINT,
                           qualificacao_responsavel_id BIGINT,
-                          capital_social              DECIMAL(15,2),
+                          capital_social              VARCHAR(100),
                           porte_empresa               SMALLINT,
                           ente_federativo_responsavel VARCHAR(100),
                           CONSTRAINT uk_empresas_cnpj_basico UNIQUE (cnpj_basico)
