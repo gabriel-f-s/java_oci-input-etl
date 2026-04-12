@@ -6,6 +6,8 @@ import com.gabriel_f_s.oci.input.exception.EntityNotFoundException;
 import com.gabriel_f_s.oci.input.repository.AuditLogRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -110,6 +112,7 @@ public class LoggingService {
      * @param record
      *      File name to insert in log (filename.zip)
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateRecordsInserted(Long logId, int record) {
         String selectSql = String.format("SELECT records_inserted FROM audit_logs WHERE id = %d", logId);
         Long actualRecord = jdbcTemplate.queryForObject(
@@ -151,21 +154,22 @@ public class LoggingService {
     }
 
     /**
-     * Updates a in_progress log to error, in case of error.
+     * Updates an in_progress log to error, in case of error.
      * @param error
      *      Log to update.
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateLogInCaseOfError(String error) {
-        Optional<AuditLog> optionalLog = logRepository.findFirstByStatusOrderByStartDate(ProgressStatus.IN_PROGRESS);
-        if (optionalLog.isEmpty()) return;
+        Optional<AuditLog> optionalAuditLog = logRepository.findFirstByStatusOrderByStartDate(ProgressStatus.IN_PROGRESS);
+        if (optionalAuditLog.isEmpty()) return;
 
-        AuditLog log = optionalLog.get();
-        int timesStopped = log.getNumberOfTimesItStopped();
+        AuditLog log = optionalAuditLog.get();
         log.setStatus(ProgressStatus.ERROR);
         log.setEndDate(LocalDateTime.now());
         log.setLastHeartbeat(LocalDateTime.now());
-        log.setNumberOfTimesItStopped(timesStopped + 1);
+        log.addNumberOfTimesItStopped();
         log.setError(error);
+        logRepository.save(log);
     }
 
     /**
@@ -193,13 +197,5 @@ public class LoggingService {
         log.setEndDate(LocalDateTime.now());
         log.setTotalTimeSpentInMs(ChronoUnit.MILLIS.between(log.getStartDate(), log.getEndDate()));
         logRepository.save(log);
-    }
-
-    /**
-     * Returns a log.
-     */
-    private AuditLog findAuditLogById(AuditLog log) {
-        return logRepository.findById(log.getId())
-                .orElseThrow(() -> new EntityNotFoundException("No log could be found with this ID: " + log.getId()));
     }
 }
