@@ -7,6 +7,7 @@ import com.gabriel_f_s.oci.input.entity.Qualificacao;
 import com.gabriel_f_s.oci.input.mapper.utils.ParsingUtils;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 @Component
@@ -19,7 +20,7 @@ public class EmpresaMapper implements CSVMapper<Empresa, EmpresaCsvDTO> {
     public Empresa mapTo(EmpresaCsvDTO dto, Map<String, Long> naturezasMap, Map<String, Long> qualificacoesMap) {
         Empresa empresa = new Empresa();
         empresa.setCnpjBasico(dto.getCnpjBasico());
-        empresa.setRazaoSocial(dto.getRazaoSocial());
+        empresa.setRazaoSocial(ParsingUtils.stringTreatment(dto.getRazaoSocial()));
         Long naturezaId = naturezasMap.get(dto.getNaturezaJuridica());
         if (naturezaId != null) {
             Natureza n = new Natureza();

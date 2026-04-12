@@ -22,7 +22,7 @@ public class SocioMapper implements CSVMapper<Socio, SocioCsvDTO> {
         Socio s = new Socio();
         s.setCnpjBasico(dto.getCnpjBasico());
         s.setIdentificadorDeSocio(ParsingUtils.parseInteger(dto.getIdentificadorDeSocio()));
-        s.setNomeSocio(dto.getNomeSocio());
+        s.setNomeSocio(ParsingUtils.stringTreatment(dto.getNomeSocio()));
         s.setCnpjCpfDoSocio(dto.getCnpjCpfDoSocio());
         Long qualificacaoId = qualificacoesMap.get(dto.getQualificacaoSocio());
         if (qualificacaoId != null) {
@@ -38,7 +38,7 @@ public class SocioMapper implements CSVMapper<Socio, SocioCsvDTO> {
             s.setPais(pais);
         }
         s.setRepresentanteLegal(dto.getRepresentanteLegal());
-        s.setNomeDoRepresentante(dto.getNomeDoRepresentante());
+        s.setNomeDoRepresentante(ParsingUtils.stringTreatment(dto.getNomeDoRepresentante()));
         Long qualificacaoRepresentanteId = qualificacoesMap.get(dto.getQualificacaoRepresentanteLegal());
         if (qualificacaoRepresentanteId != null) {
             Qualificacao qualificacao = new Qualificacao();

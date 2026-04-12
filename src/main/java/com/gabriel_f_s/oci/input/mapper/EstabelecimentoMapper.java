@@ -52,7 +52,7 @@ public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, Estabel
         }
         if (dto.getCnaeFiscalSecundaria() != null) {
             List<Cnae> cnaesSecudarios = new ArrayList<>();
-            String[] cnaes = dto.getCnaeFiscalSecundaria().trim().split(",");
+            String[] cnaes = ParsingUtils.stringTreatment(dto.getCnaeFiscalSecundaria()).split(",");
             for (String codigo : cnaes) {
                 Long id = cnaesMap.get(codigo);
                 if (id != null) {
@@ -63,10 +63,10 @@ public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, Estabel
             }
             e.setCnaeFiscalSecundaria(cnaesSecudarios);
         }
-        e.setTipoLogradouro(dto.getTipoLogradouro());
-        e.setLogradouro(dto.getLogradouro());
-        e.setNumero(dto.getNumero());
-        e.setComplemento(dto.getComplemento());
+        e.setTipoLogradouro(ParsingUtils.stringTreatment(dto.getTipoLogradouro()));
+        e.setLogradouro(ParsingUtils.stringTreatment(dto.getLogradouro()));
+        e.setNumero(ParsingUtils.stringTreatment(dto.getNumero()));
+        e.setComplemento(ParsingUtils.stringTreatment(dto.getComplemento()));
         e.setBairro(dto.getBairro());
         e.setCep(dto.getCep());
         e.setUf(dto.getUf());
@@ -82,8 +82,8 @@ public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, Estabel
         e.setTelefone2(dto.getTelefone2());
         e.setDddFax(dto.getDddFax());
         e.setFax(dto.getFax());
-        e.setCorreioEletronico(dto.getCorreioEletronico());
-        e.setSituacaoEspecial(dto.getSituacaoEspecial());
+        e.setCorreioEletronico(ParsingUtils.stringTreatment(dto.getCorreioEletronico()));
+        e.setSituacaoEspecial(ParsingUtils.stringTreatment(dto.getSituacaoEspecial()));
         e.setDataSituacaoEspecial(ParsingUtils.parseLocalDate(dto.getDataSituacaoEspecial()));
         return e;
     }
