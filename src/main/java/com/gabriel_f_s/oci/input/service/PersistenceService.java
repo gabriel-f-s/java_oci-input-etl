@@ -1,6 +1,6 @@
 package com.gabriel_f_s.oci.input.service;
 
-import com.gabriel_f_s.oci.input.entity.*;
+import com.gabriel_f_s.oci.input.dto.LinkEstabelecimentoCnae;
 import com.gabriel_f_s.oci.input.entity.*;
 import com.gabriel_f_s.oci.input.exception.DatabaseException;
 import org.slf4j.Logger;
@@ -27,23 +27,25 @@ public class PersistenceService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    private <T> void executeBatch(String sql, List<T> items, BiConsumer<PreparedStatement, T> binder) {
-        int[][] updateCounts = jdbcTemplate.batchUpdate(sql, items, BATCH_SIZE, binder::accept);
-
-        long totalRowsAffected = 0;
-        for (int[] batch : updateCounts) {
-            for (int count : batch) {
-                if (count > 0 || count == -2) totalRowsAffected++;
-            }
-        }
-
-        logger.info("Batch Processed. Sent: {} | Affected in the Database: {}", items.size(), totalRowsAffected);
-
-        if (totalRowsAffected == 0 && !items.isEmpty()) {
-            logger.warn("WARNING: No rows were inserted. Check if the CNPJs already exist or if the FKs are failing.");
-        }
+    /**
+     * Performs the insertion of entities into the database.
+     * @param sql
+     *      SQL query.
+     * @param items
+     *      List of items to insert.
+     * @param binder
+     *      Binder with table definition logic
+     */
+    @Transactional
+    protected <T> void executeBatch(String sql, List<T> items, BiConsumer<PreparedStatement, T> binder) {
+        jdbcTemplate.batchUpdate(sql, items, BATCH_SIZE, binder::accept);
     }
 
+    /**
+     * Define the SQL query for insertion and apply the bind.
+     * @param cnaes
+     *      List of Cnae for insertion.
+     */
     @Transactional
     public void insertCnaes(List<Cnae> cnaes) {
         String sql = "INSERT INTO cnaes (codigo, descricao) VALUES (?, ?) ON CONFLICT (codigo) DO NOTHING";
@@ -57,6 +59,11 @@ public class PersistenceService {
         });
     }
 
+    /**
+     * Define the SQL query for insertion and apply the bind.
+     * @param motivos
+     *      List of Motivo for insertion.
+     */
     @Transactional
     public void insertMotivos(List<Motivo> motivos) {
         String sql = "INSERT INTO motivos (codigo, descricao) VALUES (?, ?) ON CONFLICT (codigo) DO NOTHING";
@@ -70,6 +77,11 @@ public class PersistenceService {
         });
     }
 
+    /**
+     * Define the SQL query for insertion and apply the bind.
+     * @param municipios
+     *      List of Municipio for insertion.
+     */
     @Transactional
     public void insertMunicipios(List<Municipio> municipios) {
         String sql = "INSERT INTO municipios (codigo, descricao) VALUES (?, ?) ON CONFLICT (codigo) DO NOTHING";
@@ -84,6 +96,11 @@ public class PersistenceService {
         });
     }
 
+    /**
+     * Define the SQL query for insertion and apply the bind.
+     * @param naturezas
+     *      List of Natureza for insertion.
+     */
     @Transactional
     public void insertNaturezas(List<Natureza> naturezas) {
         String sql = "INSERT INTO naturezas (codigo, descricao) VALUES (?, ?) ON CONFLICT (codigo) DO NOTHING";
@@ -97,6 +114,11 @@ public class PersistenceService {
         });
     }
 
+    /**
+     * Define the SQL query for insertion and apply the bind.
+     * @param paises
+     *      List of Pais for insertion.
+     */
     @Transactional
     public void insertPaises(List<Pais> paises) {
         String sql = "INSERT INTO paises (codigo, descricao) VALUES (?, ?) ON CONFLICT (codigo) DO NOTHING";
@@ -110,6 +132,11 @@ public class PersistenceService {
         });
     }
 
+    /**
+     * Define the SQL query for insertion and apply the bind.
+     * @param qualificacoes
+     *      List of Qualificacao for insertion.
+     */
     @Transactional
     public void insertQualificacoes(List<Qualificacao> qualificacoes) {
         String sql = "INSERT INTO qualificacoes (codigo, descricao) VALUES (?, ?) ON CONFLICT (codigo) DO NOTHING";
@@ -123,6 +150,11 @@ public class PersistenceService {
         });
     }
 
+    /**
+     * Define the SQL query for insertion and apply the bind.
+     * @param empresas
+     *      List of Empresa for insertion.
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void insertEmpresas(List<Empresa> empresas) {
         String sql = "INSERT INTO empresas " +
@@ -142,11 +174,11 @@ public class PersistenceService {
                 } else {
                     ps.setNull(4, java.sql.Types.BIGINT);
                 }
-                ps.setBigDecimal(5, empresa.getCapitalSocial());
+                ps.setString(5, empresa.getCapitalSocial());
                 if (empresa.getPorteEmpresa() != null) {
-                    ps.setString(6, empresa.getPorteEmpresa().name());
+                    ps.setInt(6, empresa.getPorteEmpresa());
                 } else {
-                    ps.setNull(6, java.sql.Types.VARCHAR);
+                    ps.setNull(6, Types.SMALLINT);
                 }
                 ps.setString(7, empresa.getEnteFederativoResponsavel());
             } catch (SQLException e) {
@@ -155,9 +187,14 @@ public class PersistenceService {
         });
     }
 
+    /**
+     * Define the SQL query for insertion and apply the bind.
+     * @param estabelecimentos
+     *      List of Estabelecimento for insertion.
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void insertEstabelecimentos(List<Estabelecimento> estabelecimentos) {
-        String sql = "INSERT INTO public.estabelecimentos" +
+        String sql = "INSERT INTO estabelecimentos" +
                 "(cnpj_basico, cnpj_ordem, cnpj_dv, identificador_matriz_filial, nome_fantasia, situacao_cadastral, data_situacao_cadastral, motivo_situacao_cadastral_id, nome_cidade_exterior, pais_id, data_inicio_atividade, cnae_fiscal_principal_id, tipo_logradouro, logradouro, numero, complemento, bairro, cep, uf, municipio_id, ddd1, telefone1, ddd2, telefone2, ddd_fax, fax, correio_eletronico, situacao_especial, data_situacao_especial) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (cnpj_basico, cnpj_ordem, cnpj_dv) DO NOTHING";
         executeBatch(sql, estabelecimentos, (ps, estabelecimento) -> {
@@ -166,15 +203,15 @@ public class PersistenceService {
                 ps.setString(2, estabelecimento.getCnpjOrdem());
                 ps.setString(3, estabelecimento.getCnpjDv());
                 if (estabelecimento.getIdentificadorMatrizFilial() != null) {
-                    ps.setString(4, estabelecimento.getIdentificadorMatrizFilial().name());
+                    ps.setInt(4, estabelecimento.getIdentificadorMatrizFilial());
                 } else {
-                    ps.setNull(4, Types.VARCHAR);
+                    ps.setNull(4, Types.SMALLINT);
                 }
                 ps.setString(5, estabelecimento.getNomeFantasia());
                 if (estabelecimento.getSituacaoCadastral() != null) {
-                    ps.setObject(6, estabelecimento.getSituacaoCadastral().getValue());
+                    ps.setInt(6, estabelecimento.getSituacaoCadastral());
                 } else {
-                    ps.setNull(6, java.sql.Types.VARCHAR);
+                    ps.setNull(6, java.sql.Types.SMALLINT);
                 }
                 ps.setObject(7, estabelecimento.getDataSituacaoCadastral());
                 if (estabelecimento.getMotivoSituacaoCadastral() != null && estabelecimento.getMotivoSituacaoCadastral().getId() != null) {
@@ -221,6 +258,45 @@ public class PersistenceService {
         });
     }
 
+    /**
+     * Define the SQL query for insertion and apply the bind.
+     * @param estabelecimentos
+     *      List of Estabelecimento for insertion in estabelecimento_cnae table.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    protected void insertEstabelecimentosCnaes(List<Estabelecimento> estabelecimentos) {
+        String sql = "INSERT INTO estabelecimento_cnae (estabelecimento_id, cnae_id) " +
+                "SELECT e.id, ? " +
+                "FROM estabelecimentos e " +
+                "WHERE e.cnpj_basico = ? AND e.cnpj_ordem = ? AND e.cnpj_dv = ? " +
+                "ON CONFLICT DO NOTHING";
+        List<LinkEstabelecimentoCnae> links = estabelecimentos.stream()
+                .flatMap(e -> e.getCnaeFiscalSecundaria().stream()
+                        .map(cnae -> new LinkEstabelecimentoCnae(
+                                e.getCnpjBasico(),
+                                e.getCnpjOrdem(),
+                                e.getCnpjDv(),
+                                cnae.getId()
+                        )))
+                .toList();
+        if (links.isEmpty()) return;
+        executeBatch(sql, links, (ps, link) -> {
+            try {
+                ps.setLong(1, link.cnaeId());
+                ps.setString(2, link.cnpjBasico());
+                ps.setString(3, link.cnpjOrdem());
+                ps.setString(4, link.cnpjDv());
+            } catch (SQLException e) {
+                throw new DatabaseException("Error mapping 'Estabelecimentos - Cnaes': " + e);
+            }
+        } );
+    }
+
+    /**
+     * Define the SQL query for insertion and apply the bind.
+     * @param simples
+     *      List of Simples for insertion.
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void insertSimples(List<Simples> simples) {
         String sql = "INSERT INTO simples " +
@@ -229,10 +305,18 @@ public class PersistenceService {
         executeBatch(sql, simples, (ps, simples1) -> {
             try {
                 ps.setString(1, simples1.getCnpjBasico());
-                ps.setString(2, simples1.getOpcaoPeloSimples().name());
+                if (simples1.getOpcaoPeloSimples() != null) {
+                    ps.setString(2, simples1.getOpcaoPeloSimples());
+                } else {
+                    ps.setString(2, "OUTROS");
+                }
                 ps.setObject(3, simples1.getDataOpcaoSimples());
                 ps.setObject(4, simples1.getDataExclusaoSimples());
-                ps.setString(5, simples1.getOpcaoPeloMei().name());
+                if (simples1.getOpcaoPeloMei() != null) {
+                    ps.setString(5, simples1.getOpcaoPeloMei());
+                } else {
+                    ps.setString(5, "OUTROS");
+                }
                 ps.setObject(6, simples1.getDataOpcaoMei());
                 ps.setObject(7, simples1.getDataExclusaoMei());
             } catch (SQLException e) {
@@ -241,27 +325,43 @@ public class PersistenceService {
         });
     }
 
+    /**
+     * Define the SQL query for insertion and apply the bind.
+     * @param socios
+     *      List of Socio for insertion.
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void insertSocios(List<Socio> socios) {
-        String sql = "INSERT INTO public.socios " +
-                "(cnpj_basico, identificador_de_socio, nome_socio, cnpj_cpf_do_socio, qualificacao_socio_id, data_entrada_sociedade, pais_id, representante_legal, nome_do_representante, qualificacao_representante_legal_id, faixa_etaria)\n" +
+        String sql = "INSERT INTO socios" +
+                "(cnpj_basico, identificador_de_socio, nome_socio, cnpj_cpf_do_socio, qualificacao_socio_id, data_entrada_sociedade, pais_id, representante_legal, nome_do_representante, qualificacao_representante_legal_id, faixa_etaria) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (cnpj_basico) DO NOTHING";
         executeBatch(sql, socios, (ps, socio) -> {
             try {
                 ps.setString(1, socio.getCnpjBasico());
-                ps.setInt(2, socio.getIdentificadorDeSocio().getValue());
+                ps.setInt(2, socio.getIdentificadorDeSocio());
                 ps.setString(3, socio.getNomeSocio());
                 ps.setString(4, socio.getCnpjCpfDoSocio());
-                ps.setObject(5, socio.getQualificacaoSocio().getId() != null ? socio.getQualificacaoSocio().getId() : null);
+                if (socio.getQualificacaoSocio() != null && socio.getQualificacaoSocio().getId() != null) {
+                    ps.setObject(5, socio.getQualificacaoSocio().getId());
+                } else {
+                    ps.setNull(5, java.sql.Types.BIGINT);
+                }
                 ps.setObject(6, socio.getDataEntradaSociedade());
-                ps.setObject(7, socio.getPais().getId() != null ? socio.getPais().getId() : null);
+                if (socio.getPais() != null && socio.getPais().getId() != null) {
+                    ps.setObject(7, socio.getPais().getId());
+                } else {
+                    ps.setNull(7, java.sql.Types.BIGINT);
+                }
                 ps.setString(8, socio.getRepresentanteLegal());
                 ps.setString(9, socio.getNomeDoRepresentante());
-                ps.setObject(10, socio.getQualificacaoRepresentanteLegal().getId() != null ? socio.getQualificacaoRepresentanteLegal().getId() : null);
-                ps.setString(11, socio.getFaixaEtaria());
-
+                if (socio.getQualificacaoRepresentanteLegal() != null && socio.getQualificacaoRepresentanteLegal().getId() != null) {
+                    ps.setObject(10, socio.getQualificacaoRepresentanteLegal().getId());
+                } else {
+                    ps.setNull(10, java.sql.Types.BIGINT);
+                }
+                ps.setInt(11, socio.getFaixaEtaria());
             } catch (SQLException e) {
-                throw new DatabaseException("Error mapping 'Estabelecimentos': " + e);
+                throw new DatabaseException("Error mapping 'Socios': " + e);
             }
         });
     }
