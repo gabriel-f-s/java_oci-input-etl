@@ -38,7 +38,7 @@ public class WorkflowManagerService {
      * Resumes the ETL.
      */
     @Async
-    public void resume() {
+    protected void resume() {
         logger.info("Continuing processing from the last log.");
         AuditLog log = loggingService.findLastCanceledLogFilesProcessed();
         loggingService.updateCanceledLog(log);
