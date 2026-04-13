@@ -28,7 +28,7 @@ public class Empresa {
     @JoinColumn(name = "qualificacao_responsavel_id")
     private Qualificacao qualificacaoResponsavel;
     @Column(name = "capital_social")
-    private BigDecimal capitalSocial;
+    private String capitalSocial;
     @Column(name = "porte_empresa")
     private Integer porteEmpresa;
     @Column(name = "ente_federativo_responsavel")
