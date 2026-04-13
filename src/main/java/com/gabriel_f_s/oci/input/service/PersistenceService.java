@@ -20,8 +20,6 @@ import java.util.function.BiConsumer;
 @Service
 public class PersistenceService {
 
-    private static final Logger logger = LoggerFactory.getLogger(PersistenceService.class);
-
     private final int BATCH_SIZE = 500;
 
     @Autowired
