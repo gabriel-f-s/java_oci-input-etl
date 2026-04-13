@@ -32,7 +32,9 @@ public class ParsingUtils {
     public static String stringProcessing(String str, int limit) {
         if (str == null) return null;
 
-        String treatedString = str.replace("\"", "").trim();
+        String treatedString = str.replace("\"", "")
+                .replace("\u0000", "")
+                .trim();
 
         if (treatedString.length() > limit) {
             return treatedString.substring(0, limit);
