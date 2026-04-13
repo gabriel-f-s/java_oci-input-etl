@@ -20,14 +20,23 @@ public class ParsingUtils {
     }
 
     public static Integer parseInteger(String intStr) {
-        if (intStr == null) return null;
-        return Integer.parseInt(intStr);
+        if (intStr == null || intStr.trim().isEmpty()) return null;
+        String cleanStr = intStr.replace("\"", "").trim();
+        try {
+            return Integer.parseInt(cleanStr);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
-    public static String stringTreatment(String str) {
+    public static String stringProcessing(String str, int limit) {
         if (str == null) return null;
-        int limit = 255;
-        String treatedString = str.trim();
-        return treatedString.length() <= limit ? treatedString : treatedString.substring(0, limit);
+
+        String treatedString = str.replace("\"", "").trim();
+
+        if (treatedString.length() > limit) {
+            return treatedString.substring(0, limit);
+        }
+        return treatedString;
     }
 }
