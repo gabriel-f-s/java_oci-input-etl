@@ -23,11 +23,11 @@ public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, Estabel
             Map<String, Long> municipiosMap
     ) {
         Estabelecimento e = new Estabelecimento();
-        e.setCnpjBasico(dto.getCnpjBasico());
-        e.setCnpjOrdem(dto.getCnpjOrdem());
-        e.setCnpjDv(dto.getCnpjDv());
+        e.setCnpjBasico(ParsingUtils.stringProcessing(dto.getCnpjBasico(), 8));
+        e.setCnpjOrdem(ParsingUtils.stringProcessing(dto.getCnpjOrdem(), 4));
+        e.setCnpjDv(ParsingUtils.stringProcessing(dto.getCnpjDv(), 2));
         e.setIdentificadorMatrizFilial(ParsingUtils.parseInteger(dto.getIdentificadorMatrizFilial()));
-        e.setNomeFantasia(dto.getNomeFantasia());
+        e.setNomeFantasia(ParsingUtils.stringProcessing(dto.getNomeFantasia(), 255));
         e.setSituacaoCadastral(ParsingUtils.parseInteger(dto.getSituacaoCadastral()));
         e.setDataSituacaoCadastral(ParsingUtils.parseLocalDate(dto.getDataSituacaoCadastral()));
         Long motivoId = motivosMap.get(dto.getMotivoSituacaoCadastral());
@@ -52,7 +52,7 @@ public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, Estabel
         }
         if (dto.getCnaeFiscalSecundaria() != null) {
             List<Cnae> cnaesSecudarios = new ArrayList<>();
-            String[] cnaes = ParsingUtils.stringTreatment(dto.getCnaeFiscalSecundaria()).split(",");
+            String[] cnaes = ParsingUtils.stringProcessing(dto.getCnaeFiscalSecundaria(), 255).split(",");
             for (String codigo : cnaes) {
                 Long id = cnaesMap.get(codigo);
                 if (id != null) {
@@ -63,27 +63,27 @@ public class EstabelecimentoMapper implements CSVMapper<Estabelecimento, Estabel
             }
             e.setCnaeFiscalSecundaria(cnaesSecudarios);
         }
-        e.setTipoLogradouro(ParsingUtils.stringTreatment(dto.getTipoLogradouro()));
-        e.setLogradouro(ParsingUtils.stringTreatment(dto.getLogradouro()));
-        e.setNumero(ParsingUtils.stringTreatment(dto.getNumero()));
-        e.setComplemento(ParsingUtils.stringTreatment(dto.getComplemento()));
-        e.setBairro(dto.getBairro());
-        e.setCep(dto.getCep());
-        e.setUf(dto.getUf());
+        e.setTipoLogradouro(ParsingUtils.stringProcessing(dto.getTipoLogradouro(), 50));
+        e.setLogradouro(ParsingUtils.stringProcessing(dto.getLogradouro(), 255));
+        e.setNumero(ParsingUtils.stringProcessing(dto.getNumero(), 50));
+        e.setComplemento(ParsingUtils.stringProcessing(dto.getComplemento(), 255));
+        e.setBairro(ParsingUtils.stringProcessing(dto.getBairro(), 60));
+        e.setCep(ParsingUtils.stringProcessing(dto.getCep(), 8));
+        e.setUf(ParsingUtils.stringProcessing(dto.getUf(), 2));
         Long municipioId = municipiosMap.get(dto.getMunicipio());
         if (municipioId != null) {
             Municipio municipio = new Municipio();
             municipio.setId(municipioId);
             e.setMunicipio(municipio);
         }
-        e.setDdd1(dto.getDdd1());
-        e.setTelefone1(dto.getTelefone1());
-        e.setDdd2(dto.getDdd2());
-        e.setTelefone2(dto.getTelefone2());
-        e.setDddFax(dto.getDddFax());
-        e.setFax(dto.getFax());
-        e.setCorreioEletronico(ParsingUtils.stringTreatment(dto.getCorreioEletronico()));
-        e.setSituacaoEspecial(ParsingUtils.stringTreatment(dto.getSituacaoEspecial()));
+        e.setDdd1(ParsingUtils.stringProcessing(dto.getDdd1(), 4));
+        e.setTelefone1(ParsingUtils.stringProcessing(dto.getTelefone1(), 15));
+        e.setDdd2(ParsingUtils.stringProcessing(dto.getDdd2(), 4));
+        e.setTelefone2(ParsingUtils.stringProcessing(dto.getTelefone2(), 15));
+        e.setDddFax(ParsingUtils.stringProcessing(dto.getDddFax(), 4));
+        e.setFax(ParsingUtils.stringProcessing(dto.getFax(), 15));
+        e.setCorreioEletronico(ParsingUtils.stringProcessing(dto.getCorreioEletronico(), 255));
+        e.setSituacaoEspecial(ParsingUtils.stringProcessing(dto.getSituacaoEspecial(), 255));
         e.setDataSituacaoEspecial(ParsingUtils.parseLocalDate(dto.getDataSituacaoEspecial()));
         return e;
     }
