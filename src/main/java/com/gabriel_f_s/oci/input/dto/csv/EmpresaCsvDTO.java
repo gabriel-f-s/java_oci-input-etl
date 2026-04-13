@@ -19,8 +19,8 @@ public class EmpresaCsvDTO {
     private String naturezaJuridica;
     @CsvBindByPosition(position = 3)
     private String qualificacaoResponsavel;
-    @CsvBindByPosition(position = 4, locale = "pt-BR")
-    private BigDecimal capitalSocial;
+    @CsvBindByPosition(position = 4)
+    private String capitalSocial;
     @CsvBindByPosition(position = 5)
     private String porteEmpresa;
     @CsvBindByPosition(position = 6)
