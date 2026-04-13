@@ -25,10 +25,10 @@ public class AsyncConfig implements AsyncConfigurer {
 
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
         return (exception, method, params) -> {
-            String error = String.format("An error occurred in %s. Message: %s; Cause: %s;", method.getName(), exception.getMessage(), exception.getCause());
-            loggingService.updateLogInCaseOfError(error);
-            logger.error("{}... Stopping application.", error);
-        };
+           String error = String.format("An error occurred in %s. Message: %s; Cause: %s;", method.getName(), exception.getMessage(), exception.getCause());
+           loggingService.updateLogInCaseOfError(error);
+           logger.error("{}... Stopping application.", error);
+       };
     }
 
     @Bean(name = "taskExecutor")
